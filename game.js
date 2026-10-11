@@ -9,6 +9,21 @@ var counter = 0;
 var numberofbombs = 0;
 var playerdead = false;
 
+// Detect touch devices (phones/tablets) and tag the page so style.css can
+// show the on-screen controls and make room for them below the grass.
+var istouchdevice = ('ontouchstart' in window) || window.matchMedia('(pointer: coarse)').matches;
+if (istouchdevice) {
+	document.documentElement.classList.add('touch');
+}
+
+// The player can walk anywhere that isn't the sky, off the screen,
+// or the on-screen touch controls bar.
+function canWalkOn(element) {
+	return element != null &&
+		element.classList.contains('sky') == false &&
+		element.closest('#touchcontrols') == null;
+}
+
 function keyup(event) {
 	var player = document.getElementById('player');
 	if (event.keyCode == 37) {
@@ -58,9 +73,11 @@ function move() {
 	if (downPressed) {
 		var newTop = positionTop + 1;
 
-		var element = document.elementFromPoint(player.offsetLeft, newTop + 32);
+		// Check just below the player's feet (offsetHeight) so they can't walk
+		// off the bottom of the screen or onto the touch controls
+		var element = document.elementFromPoint(player.offsetLeft, newTop + player.offsetHeight);
 
-		if (element!=null && element.classList.contains('sky') == false) {
+		if (canWalkOn(element)) {
 			player.style.top = newTop + 'px';
 
 		}
@@ -76,7 +93,7 @@ function move() {
 
 		var element = document.elementFromPoint(player.offsetLeft, newTop);
 
-		if (element!=null && element.classList.contains('sky') == false) {
+		if (canWalkOn(element)) {
 
 			player.style.top = newTop + 'px';
 		}
@@ -91,7 +108,7 @@ function move() {
 		var newLeft = positionLeft - 1;
 
 		var element = document.elementFromPoint(newLeft, player.offsetTop);
-		if (element!=null && element.classList.contains('sky') == false) {
+		if (canWalkOn(element)) {
 
 			player.style.left = newLeft + 'px';
 		}
@@ -103,7 +120,7 @@ function move() {
 		var newLeft = positionLeft + 1;
 
 		var element = document.elementFromPoint(newLeft + 32, player.offsetTop);
-		if (element!=null && element.classList.contains('sky') == false) {
+		if (canWalkOn(element)) {
 
 			player.style.left = newLeft + 'px';
 		}
@@ -213,6 +230,44 @@ function keydown(event) {
 	}
 }
 
+// Wire up the on-screen arrow buttons. Each button has a data-keycode
+// matching an arrow key, and pressing/releasing it calls the same
+// keydown/keyup functions the keyboard uses, so movement works identically.
+function setuptouchcontrols() {
+	var buttons = document.getElementsByClassName('touchbutton');
+	for (var i = 0; i < buttons.length; i++) {
+		var button = buttons[i];
+		var fakeevent = { keyCode: Number(button.getAttribute('data-keycode')) };
+
+		var press = function (fakeevent) {
+			return function (event) {
+				event.preventDefault();
+				this.classList.add('pressed');
+				keydown(fakeevent);
+			};
+		}(fakeevent);
+
+		var release = function (fakeevent) {
+			return function (event) {
+				event.preventDefault();
+				// Only release if this button was actually pressed
+				if (this.classList.contains('pressed')) {
+					this.classList.remove('pressed');
+					keyup(fakeevent);
+				}
+			};
+		}(fakeevent);
+
+		button.addEventListener('pointerdown', press);
+		button.addEventListener('pointerup', release);
+		button.addEventListener('pointercancel', release);
+		button.addEventListener('pointerleave', release);
+		// Stop long-press menus and double-tap zoom on the buttons
+		button.addEventListener('contextmenu', function (event) { event.preventDefault(); });
+		button.addEventListener('touchstart', function (event) { event.preventDefault(); }, { passive: false });
+	}
+}
+
 function startbuttonclick (element) {
 	var startbutton = document.getElementById("startbutton");
 	startbutton.style.visibility = 'hidden';
@@ -229,6 +284,7 @@ function myLoadFunction() {
 	timeout = setInterval(move, 10);
 	document.addEventListener('keydown', keydown);
 	document.addEventListener('keyup', keyup);
+	setuptouchcontrols();
 
 
 	var startbutton = document.getElementById("startbutton");

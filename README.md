@@ -5,7 +5,8 @@ A small arcade game built in HTML, CSS and JavaScript during my first year of BS
 **Play it:** open `index.html` in a browser, or use the GitHub Pages link for this repo.
 
 ## How it works
-- Move the player with the arrow keys and dodge the falling bombs
+- Move the player and dodge the falling bombs: use the arrow keys on a computer, or the on-screen arrow buttons on a phone or tablet (they only appear on touch screens)
+- Tap or click Start to begin
 - Health bar, explosions, and start and game-over screens
 - Sprite-based animation driven by JavaScript
 
